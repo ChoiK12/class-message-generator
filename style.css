@@ -675,6 +675,72 @@ select {
 
 }
 
+/* ========================================
+   날짜 선택
+   ======================================== */
+
+.date-checkboxes {
+
+  display: flex;
+
+  gap: 8px;
+
+}
+
+
+.date-checkbox {
+
+  flex: 1;
+
+  margin: 0 !important;
+
+  cursor: pointer;
+
+}
+
+
+.date-checkbox input {
+
+  display: none;
+
+}
+
+
+.date-checkbox span {
+
+  display: block;
+
+  padding: 12px 8px;
+
+  border: 1px solid #ddd;
+
+  border-radius: 10px;
+
+  background: white;
+
+  text-align: center;
+
+  color: #555;
+
+  font-size: 14px;
+
+  transition: 0.15s;
+
+}
+
+
+.date-checkbox input:checked + span {
+
+  border-color: #222;
+
+  background: #222;
+
+  color: white;
+
+  font-weight: 600;
+
+}
+
 
 /* ========================================
    저장 버튼

@@ -64,6 +64,12 @@ const lunchCheck =
 const dinnerCheck =
   document.getElementById("dinnerCheck");
 
+const todayCheck =
+  document.getElementById("todayCheck");
+
+const tomorrowCheck =
+  document.getElementById("tomorrowCheck");
+
 const saveSchoolBtn =
   document.getElementById("saveSchoolBtn");
 
@@ -79,16 +85,20 @@ let currentSchool = null;
 
 
 // ========================================
-// 날짜
+// 선택 날짜
 // ========================================
 
-function getTomorrow() {
+function getSelectedDate() {
 
   const date = new Date();
 
-  date.setDate(
-    date.getDate() + 1
-  );
+  if (tomorrowCheck.checked) {
+
+    date.setDate(
+      date.getDate() + 1
+    );
+
+  }
 
   const year =
     date.getFullYear();
@@ -104,6 +114,20 @@ function getTomorrow() {
     ).padStart(2, "0");
 
   return `${year}${month}${day}`;
+
+}
+
+
+// ========================================
+// 날짜 표시 이름
+// ========================================
+
+function getSelectedDateText() {
+
+  return tomorrowCheck.checked
+    ? "내일"
+    : "오늘";
+
 }
 
 
@@ -128,6 +152,7 @@ function getMealSettings() {
   }
 
   return settings;
+
 }
 
 
@@ -143,7 +168,8 @@ function saveSettings() {
 
   const settings = {
 
-    school: currentSchool,
+    school:
+      currentSchool,
 
     grade:
       gradeSelect.value,
@@ -152,7 +178,12 @@ function saveSettings() {
       classSelect.value,
 
     meals:
-      getMealSettings()
+      getMealSettings(),
+
+    date:
+      tomorrowCheck.checked
+        ? "tomorrow"
+        : "today"
 
   };
 
@@ -191,14 +222,21 @@ function loadSettings() {
     currentSchool =
       settings.school;
 
+
+    // 학년
+
     gradeSelect.value =
       settings.grade || "1";
+
+
+    // 반
 
     classSelect.value =
       settings.className || "1";
 
 
-    // 기존 버전의 meal 설정도 대응
+    // 급식 설정
+
     if (settings.meals) {
 
       breakfastCheck.checked =
@@ -228,7 +266,7 @@ function loadSettings() {
     }
 
 
-    // 아무것도 선택되지 않았다면
+    // 아무 급식도 선택되지 않았다면
     // 중식을 기본값으로
 
     if (
@@ -237,7 +275,33 @@ function loadSettings() {
       !dinnerCheck.checked
     ) {
 
-      lunchCheck.checked = true;
+      lunchCheck.checked =
+        true;
+
+    }
+
+
+    // 날짜 설정
+
+    if (settings.date === "today") {
+
+      todayCheck.checked =
+        true;
+
+      tomorrowCheck.checked =
+        false;
+
+    }
+
+    else {
+
+      // 기본값: 내일
+
+      todayCheck.checked =
+        false;
+
+      tomorrowCheck.checked =
+        true;
 
     }
 
@@ -312,6 +376,7 @@ async function searchSchools() {
         `${API_BASE}/api/schools?keyword=${encodeURIComponent(keyword)}`
       );
 
+
     if (!response.ok) {
 
       throw new Error(
@@ -320,6 +385,7 @@ async function searchSchools() {
 
     }
 
+
     const data =
       await response.json();
 
@@ -327,9 +393,7 @@ async function searchSchools() {
       data.schools || [];
 
 
-    if (
-      schools.length === 0
-    ) {
+    if (schools.length === 0) {
 
       schoolSearchStatus.textContent =
         "검색 결과가 없습니다.";
@@ -353,6 +417,7 @@ async function searchSchools() {
 
         button.className =
           "school-result";
+
 
         button.innerHTML =
           `<strong>${school.name}</strong>
@@ -399,9 +464,11 @@ function selectSchool(school) {
   currentSchool =
     school;
 
+
   selectedSchool.innerHTML =
     `<strong>${school.name}</strong>
      <span>${school.location || ""}</span>`;
+
 
   schoolResults.innerHTML =
     "";
@@ -426,8 +493,10 @@ async function getTimetable() {
 
   }
 
+
   const date =
-    getTomorrow();
+    getSelectedDate();
+
 
   const params =
     new URLSearchParams({
@@ -468,6 +537,7 @@ async function getTimetable() {
   const data =
     await response.json();
 
+
   return data.timetable || [];
 
 }
@@ -489,7 +559,7 @@ async function getMeal() {
 
 
   const date =
-    getTomorrow();
+    getSelectedDate();
 
 
   const params =
@@ -535,9 +605,7 @@ async function getMeal() {
 // 급식 표시
 // ========================================
 
-function createMealText(
-  meals
-) {
+function createMealText(meals) {
 
   const names = {
 
@@ -560,9 +628,7 @@ function createMealText(
   // 아무것도 선택하지 않은 경우
   // 중식으로 처리
 
-  if (
-    selected.length === 0
-  ) {
+  if (selected.length === 0) {
 
     return `중식
 급식이 없습니다.`;
@@ -646,6 +712,10 @@ function createMessage(
       : "시간표가 없습니다.";
 
 
+  const dateText =
+    getSelectedDateText();
+
+
   const mealText =
     createMealText(meals);
 
@@ -653,10 +723,10 @@ function createMessage(
   return `공지사항📣
 ${noticeText || "- 없음"}
 
-내일 시간표
+${dateText} 시간표
 ${timetableText}
 
-내일 급식🍚
+${dateText} 급식🍚
 ${mealText}`;
 
 }
@@ -687,8 +757,12 @@ loadButton.addEventListener(
       true;
 
 
+    const dateText =
+      getSelectedDateText();
+
+
     status.textContent =
-      "내일 정보를 불러오는 중...";
+      `${dateText} 정보를 불러오는 중...`;
 
 
     try {
@@ -903,18 +977,23 @@ saveSchoolBtn.addEventListener(
 
     closeModal();
 
+
     status.textContent =
       "학교 정보가 저장되었습니다.";
 
 
+    const dateText =
+      getSelectedDateText();
+
+
     result.textContent =
-`공지사항📣
+      `공지사항📣
 - 
 
-내일 시간표
+${dateText} 시간표
 정보를 불러오려면 버튼을 눌러주세요.
 
-내일 급식🍚
+${dateText} 급식🍚
 정보를 불러오려면 버튼을 눌러주세요.`;
 
   }
@@ -930,6 +1009,14 @@ const hasSettings =
 
 
 if (!hasSettings) {
+
+  // 최초 접속 시 기본값
+
+  lunchCheck.checked =
+    true;
+
+  tomorrowCheck.checked =
+    true;
 
   openModal();
 
